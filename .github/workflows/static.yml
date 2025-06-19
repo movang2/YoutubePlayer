@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video YouTube với Phụ đề, TTS và Từ vựng (Hoàn hảo)</title>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #video-container {
+            margin-top: 20px;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 ratio */
+            height: 0;
+            overflow: hidden;
+        }
+        #video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #subtitle-display {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        #subtitle-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+        }
+        .subtitle-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .subtitle-item:hover {
+            background-color: #f0f0f0;
+        }
+        .subtitle-item.active {
+            background-color: #d0e8ff;
+        }
+        #tts-speed-container, #tts-language-container {
+            margin-top: 10px;
+        }
+        .korean-word {
+            color: #0066cc;
+            cursor: pointer;
+        }
+        .korean-word:hover {
+            text-decoration: underline;
+        }
+        .vietnamese {
+            color: #cc0000;
+        }
+        .subtitle-line {
+            padding: 5px 0;
+        }
+        .subtitle-line.current {
+            background-color: #d0e8ff;
+            font-weight: bold;
+        }
+        #history-list, #vocab-list, #favorite-subtitles {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+        }
+        .history-item, .vocab-item {
+            padding: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item:hover, .vocab-item:hover {
+            background-color: #f0f0f0;
+        }
+        .history-item button, .vocab-item button {
+            margin-left: 10px;
+            padding: 2px 5px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .history-item button:hover, .vocab-item button:hover {
+            background-color: #cc0000;
+        }
+        .volume-container {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #subtitle-link {
+            margin-top: 10px;
+            color: #0066cc;
+            text-decoration: none;
+        }
+        #subtitle-link:hover {
+            text-decoration: underline;
+        }
+        .control-buttons {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .rewind-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .rewind-btn:hover {
+            background-color: #45a049;
+        }
+        .test-tts-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+        .test-tts-btn:hover {
+            background-color: #e68a00;
+        }
+        .auto-sub-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .auto-sub-btn:hover {
+            background-color: #1976D2;
+        }
+        .repeat-btn {
+            background-color: #9c27b0;
+            color: white;
+        }
+        .repeat-btn:hover {
+            background-color: #7b1fa2;
+        }
+        @media (max-width: 600px) {
+            body {
+                margin: 10px;
+            }
+            input, button {
+                padding: 6px;
+                font-size: 14px;
+            }
+            #subtitle-display {
+                font-size: 16px;
+            }
+            .control-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Video YouTube với Phụ đề, TTS và Từ vựng (Hoàn hảo)</h1>
+    <div class="container">
+        <input type="text" id="video-url" placeholder="Nhập link YouTube (youtu.be)...">
+        <button onclick="loadVideo()">Tải Video</button>
+        <div id="subtitle-link-container" style="display:none;">
+            <a id="subtitle-link" target="_blank">Tải phụ đề từ subtitle.to</a>
+        </div>
+        <br>
+        <input type="file" id="subtitle-file" accept=".srt">
+        <button onclick="loadSubtitles()">Tải Phụ đề</button>
+        <button class="auto-sub-btn" onclick="loadAutoSubtitles()">Tải Phụ đề Tự động</button>
+        <br>
+        <div class="control-buttons">
+            <button onclick="startReading()">Bắt đầu Đọc</button>
+            <button onclick="stopReading()">Dừng TTS</button>
+            <button class="rewind-btn" onclick="rewindSubtitle()">Lùi 5 giây</button>
+            <button class="test-tts-btn" onclick="testTTS()">Kiểm tra TTS</button>
+            <button class="repeat-btn" onclick="toggleRepeat()">Lặp Phụ đề (Bật/Tắt)</button>
+            <button onclick="saveState()">Lưu Trạng Thái</button>
+        </div>
+        <input type="file" id="state-file" accept=".json">
+        <button onclick="loadState()">Tải Trạng Thái</button>
+        <div id="tts-speed-container">
+            <label for="tts-speed">Tốc độ TTS: </label>
+            <input type="range" id="tts-speed" min="0.5" max="2.5" step="0.1" value="1.5" onchange="updateTTSSpeed(this.value)">
+            <span id="speed-value">1.5</span>
+        </div>
+        <div id="tts-language-container">
+            <label for="tts-language">Ngôn ngữ TTS: </label>
+            <select id="tts-language" onchange="updateTTSLanguage(this.value)">
+                <option value="vi-VN">Tiếng Việt</option>
+                <option value="ko-KR">Tiếng Hàn</option>
+            </select>
+        </div>
+        <div class="volume-container">
+            <div class="volume-control">
+                <label for="video-volume">Âm lượng Video: </label>
+                <input type="range" id="video-volume" min="0" max="100" value="100" onchange="updateVideoVolume(this.value)">
+                <span id="video-volume-value">100</span>
+            </div>
+            <div class="volume-control">
+                <label for="tts-volume">Âm lượng TTS: </label>
+                <input type="range" id="tts-volume" min="0" max="1" step="0.1" value="1" onchange="updateTTSVolume(this.value)">
+                <span id="tts-volume-value">1.0</span>
+            </div>
+        </div>
+    </div>
+    <div id="video-container">
+        <iframe id="youtube-video" frameborder="0" allowfullscreen></iframe>
+    </div>
+    <div id="subtitle-display"></div>
+    <div id="subtitle-list"></div>
+    <h3>Lịch sử xem</h3>
+    <div id="history-list"></div>
+    <h3>Danh sách từ vựng đã tra</h3>
+    <div id="vocab-list"></div>
+    <h3>Phụ đề yêu thích</h3>
+    <button onclick="clearAllFavorites()">Xóa tất cả phụ đề yêu thích</button>
+    <div id="favorite-subtitles"></div>
+
+    <script>
+        let youtubePlayer;
+        let subtitleData = [];
+        let currentSubtitleIndex = -1;
+        let isSpeaking = false;
+        let ttsSpeed = 1.5;
+        let ttsLanguage = "vi-VN";
+        let history = JSON.parse(localStorage.getItem("videoHistory")) || [];
+        let currentVideoUrl = "";
+        let vocabList = [];
+        let ttsVolume = 1.0;
+        let syncInterval;
+        let lastSpokenText = "";
+        let lastSpokenTime = 0;
+        let lastCheckedTime = 0;
+        let isManualSeeking = false;
+        let isRepeating = false;
+        let repeatCount = 0;
+        const maxRepeatCount = 3;
+
+        function checkManualSeek() {
+            if (!youtubePlayer) return;
+            const currentTime = youtubePlayer.getCurrentTime();
+            const timeDiff = Math.abs(currentTime - lastCheckedTime);
+            if (timeDiff > 1 && timeDiff < 10) {
+                isManualSeeking = true;
+                handleManualSeek(currentTime);
+            }
+            lastCheckedTime = currentTime;
+        }
+
+        function handleManualSeek(currentTime) {
+            if (!subtitleData.length) return;
+            let newIndex = -1;
+            for (let i = 0; i < subtitleData.length; i++) {
+                if (subtitleData[i].startTime <= currentTime) {
+                    newIndex = i;
+                } else {
+                    break;
+                }
+            }
+            if (newIndex >= 0 && newIndex !== currentSubtitleIndex) {
+                currentSubtitleIndex = newIndex;
+                updateSubtitleDisplay(newIndex);
+                if (isSpeaking) {
+                    const textToRead = ttsLanguage === "vi-VN"
+                        ? subtitleData[newIndex].vietnameseText
+                        : subtitleData[newIndex].koreanText;
+                    speechSynthesis.cancel();
+                    readText(textToRead, () => { isSpeaking = false; });
+                }
+            }
+            isManualSeeking = false;
+        }
+
+        function waitForPlayer() {
+            return new Promise((resolve, reject) => {
+                const startTime = Date.now();
+                const checkPlayer = () => {
+                    if (youtubePlayer && youtubePlayer.seekTo && youtubePlayer.setVolume) {
+                        resolve();
+                    } else if (Date.now() - startTime > 10000) {
+                        reject(new Error("YouTube player failed to initialize"));
+                    } else {
+                        setTimeout(checkPlayer, 100);
+                    }
+                };
+                checkPlayer();
+            });
+        }
+
+        function waitForVoices() {
+            return new Promise((resolve) => {
+                if (speechSynthesis.getVoices().length > 0) {
+                    resolve();
+                } else {
+                    speechSynthesis.onvoiceschanged = () => {
+                        speechSynthesis.onvoiceschanged = null;
+                        resolve();
+                    };
+                }
+            });
+        }
+
+        function loadVideo() {
+            const urlInput = document.getElementById("video-url").value;
+            const videoId = extractVideoId(urlInput);
+            if (!videoId) {
+                alert("URL không hợp lệ! Vui lòng nhập link dạng youtu.be/...");
+                return;
+            }
+            currentVideoUrl = urlInput;
+            const iframe = document.getElementById("youtube-video");
+            iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+            const subtitleLinkContainer = document.getElementById("subtitle-link-container");
+            const subtitleLink = document.getElementById("subtitle-link");
+            subtitleLink.href = `https://subtitle.to/${urlInput}`;
+            subtitleLink.textContent = `Tải phụ đề từ subtitle.to cho video này`;
+            subtitleLinkContainer.style.display = "block";
+            initializePlayer();
+            const historyItem = history.find(item => item.videoUrl === urlInput);
+            vocabList = historyItem && historyItem.vocabList ? historyItem.vocabList.slice() : [];
+            saveToHistory(urlInput, null);
+            displayVocabList();
+        }
+
+        async function loadAutoSubtitles() {
+            // Giả lập gọi API từ subtitle.to
+            alert("Đang thử tải phụ đề tự động từ subtitle.to...");
+            try {
+                // Thay thế bằng API thực nếu có
+                const response = await new Promise(resolve => {
+                    setTimeout(() => resolve({ text: `1\n00:00:01,000 --> 00:00:03,000\n안녕하세요\nXin chào\n\n2\n00:00:03,001 --> 00:00:05,000\n만나서 반갑습니다\nRất vui được gặp bạn` }), 1000);
+                });
+                subtitleData = parseSRT(response.text);
+                if (subtitleData.length === 0) {
+                    alert("Không tải được phụ đề!");
+                    return;
+                }
+                alert(`Đã tải ${subtitleData.length} dòng phụ đề tự động!`);
+                displaySubtitleList();
+                saveToHistory(currentVideoUrl, response.text);
+            } catch (error) {
+                console.error("Lỗi tải phụ đề tự động:", error);
+                alert("Lỗi khi tải phụ đề tự động: " + error.message);
+            }
+        }
+
+        function extractVideoId(url) {
+            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=))([^?&]+)/);
+            return match ? match[1] : null;
+        }
+
+        function initializePlayer() {
+            youtubePlayer = new YT.Player("youtube-video", {
+                events: {
+                    onReady: () => {
+                        setInterval(checkManualSeek, 1000);
+                        console.log("Video đã sẵn sàng");
+                        updateVideoVolume(document.getElementById("video-volume").value);
+                    },
+                    onStateChange: (event) => {
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            startReading();
+                        } else if (event.data === YT.PlayerState.PAUSED || 
+                                   event.data === YT.PlayerState.ENDED) {
+                            stopReading();
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateVideoVolume(value) {
+            if (youtubePlayer && youtubePlayer.setVolume) {
+                youtubePlayer.setVolume(parseInt(value));
+                document.getElementById("video-volume-value").textContent = value;
+            }
+        }
+
+        function updateTTSVolume(value) {
+            ttsVolume = parseFloat(value);
+            document.getElementById("tts-volume-value").textContent = ttsVolume.toFixed(1);
+            localStorage.setItem("ttsVolume", ttsVolume);
+        }
+
+        function updateTTSLanguage(language) {
+            ttsLanguage = language;
+            localStorage.setItem("ttsLanguage", ttsLanguage);
+        }
+
+        function loadSubtitles() {
+            const fileInput = document.getElementById("subtitle-file").files[0];
+            if (!fileInput) {
+                alert("Vui lòng chọn file SRT!");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                subtitleData = parseSRT(event.target.result);
+                if (subtitleData.length === 0) {
+                    alert("File SRT không hợp lệ hoặc trống!");
+                    return;
+                }
+                alert(`Đã tải ${subtitleData.length} dòng phụ đề!`);
+                displaySubtitleList();
+                saveToHistory(currentVideoUrl, event.target.result);
+            };
+            reader.readAsText(fileInput);
+        }
+
+        function parseSRT(srtContent) {
+            const subtitleBlocks = srtContent.trim().split(/\n\s*\n/);
+            return subtitleBlocks.map(block => {
+                const lines = block.split("\n");
+                if (lines.length < 4) return null;
+                const timing = lines[1].split(" --> ")[0].split(/[:,]/);
+                const startTime = parseInt(timing[0]) * 3600 + parseInt(timing[1]) * 60 + parseFloat(`${timing[2]}.${timing[3] || '0'}`);
+                const koreanText = lines[2].trim();
+                const vietnameseText = lines[3].trim();
+                return { 
+                    startTime: isNaN(startTime) ? 0 : startTime, 
+                    fullText: `${koreanText} ${vietnameseText}`, 
+                    koreanText, 
+                    vietnameseText 
+                };
+            }).filter(item => item && typeof item.startTime === 'number' && item.koreanText && item.vietnameseText);
+        }
+
+        function displaySubtitleList() {
+            const subtitleList = document.getElementById("subtitle-list");
+            subtitleList.innerHTML = "";
+            subtitleData.forEach((sub, index) => {
+                const div = document.createElement("div");
+                div.className = "subtitle-item";
+                div.innerHTML = `${formatTime(sub.startTime)}: <span class="korean">${sub.koreanText}</span> <span class="vietnamese">${sub.vietnameseText}</span> <button onclick="addFavorite(${index}); event.stopPropagation();">Yêu thích</button>`;
+                div.onclick = () => jumpToSubtitle(index);
+                subtitleList.appendChild(div);
+            });
+        }
+
+        function lookupWord(word) {
+            const naverUrl = `https://korean.dict.naver.com/kovidict/#/search?query=${encodeURIComponent(word)}`;
+            window.open(naverUrl, "_blank");
+            if (!vocabList.some(item => item.word === word)) {
+                vocabList.push({ word, meaning: "Đang tra cứu..." });
+                saveVocabToHistory();
+                displayVocabList();
+                // Giả lập lấy nghĩa từ Naver
+                setTimeout(() => {
+                    const index = vocabList.findIndex(item => item.word === word);
+                    if (index !== -1) {
+                        vocabList[index].meaning = `Nghĩa của "${word}" (giả lập)`;
+                        saveVocabToHistory();
+                        displayVocabList();
+                    }
+                }, 1000);
+            }
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, "0");
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+            const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+            return `${h}:${m}:${s}`;
+        }
+
+        function jumpToSubtitle(index) {
+            if (!youtubePlayer) {
+                alert("Vui lòng tải video trước!");
+                return;
+            }
+            currentSubtitleIndex = index - 1;
+            youtubePlayer.seekTo(subtitleData[index].startTime, true);
+            youtubePlayer.playVideo();
+            highlightSubtitle(index);
+        }
+
+        function highlightSubtitle(index) {
+            const items = document.getElementsByClassName("subtitle-item");
+            for (let i = 0; i < items.length; i++) {
+                items[i].classList.remove("active");
+            }
+            if (items[index]) items[index].classList.add("active");
+        }
+
+        function updateTTSSpeed(value) {
+            ttsSpeed = parseFloat(value);
+            document.getElementById("speed-value").textContent = ttsSpeed;
+            localStorage.setItem("ttsSpeed", ttsSpeed);
+        }
+
+        function startReading() {
+            if (!youtubePlayer || subtitleData.length === 0) {
+                alert("Vui lòng tải video và phụ đề trước!");
+                return;
+            }
+            if (syncInterval) {
+                clearInterval(syncInterval);
+            }
+            syncInterval = setInterval(() => {
+                syncSubtitles();
+            }, 200);
+            syncSubtitles();
+        }
+
+        function syncSubtitles() {
+            if (!youtubePlayer || youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                return;
+            }
+            const currentTime = youtubePlayer.getCurrentTime();
+            let nextSubtitle = null;
+            let nextIndex = -1;
+            for (let i = 0; i < subtitleData.length; i++) {
+                if (subtitleData[i].startTime <= currentTime) {
+                    nextSubtitle = subtitleData[i];
+                    nextIndex = i;
+                } else {
+                    break;
+                }
+            }
+            if (nextSubtitle && nextIndex !== currentSubtitleIndex) {
+                currentSubtitleIndex = nextIndex;
+                updateSubtitleDisplay(currentSubtitleIndex);
+                const textToRead = ttsLanguage === "vi-VN" ? nextSubtitle.vietnameseText : nextSubtitle.koreanText;
+                const currentTimeMs = Date.now();
+                if (textToRead !== lastSpokenText || (currentTimeMs - lastSpokenTime) > 1000) {
+                    speechSynthesis.cancel();
+                    isSpeaking = true;
+                    readText(textToRead, () => {
+                        isSpeaking = false;
+                        if (isRepeating && repeatCount < maxRepeatCount) {
+                            repeatCount++;
+                            youtubePlayer.seekTo(nextSubtitle.startTime, true);
+                        } else {
+                            repeatCount = 0;
+                        }
+                    });
+                    lastSpokenText = textToRead;
+                    lastSpokenTime = currentTimeMs;
+                }
+            }
+        }
+
+        function updateSubtitleDisplay(index) {
+            const startIndex = Math.max(0, index - 2);
+            const endIndex = Math.min(subtitleData.length - 1, index + 2);
+            let subtitleContent = "";
+            for (let i = startIndex; i <= endIndex; i++) {
+                const sub = subtitleData[i];
+                const koreanWords = sub.koreanText.split(/\s+/).map(word => 
+                    `<span class="korean-word" onclick="lookupWord('${word}')">${word}</span>`
+                ).join(" ");
+                const isCurrent = i === index ? "current" : "";
+                subtitleContent += `
+                    <div class="subtitle-line ${isCurrent}">
+                        ${formatTime(sub.startTime)}: ${koreanWords} <span class="vietnamese">${sub.vietnameseText}</span>
+                    </div>`;
+            }
+            document.getElementById("subtitle-display").innerHTML = subtitleContent;
+            highlightSubtitle(index);
+        }
+
+        function readText(text, callback) {
+            if (!text) {
+                callback?.();
+                return;
+            }
+            try {
+                if (typeof speechSynthesis === 'undefined' || !speechSynthesis) {
+                    console.error("Trình duyệt không hỗ trợ Web Speech API");
+                    alert("Trình duyệt của bạn không hỗ trợ chức năng đọc văn bản (TTS).");
+                    callback?.();
+                    return;
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = ttsLanguage;
+                utterance.rate = ttsSpeed;
+                utterance.volume = ttsVolume;
+                const voices = speechSynthesis.getVoices();
+                if (!voices || voices.length === 0) {
+                    console.error("Không tìm thấy giọng đọc nào");
+                    alert("Không tìm thấy giọng đọc phù hợp. Vui lòng kiểm tra cài đặt ngôn ngữ trên thiết bị.");
+                    callback?.();
+                    return;
+                }
+                const preferredVoice = voices.find(voice => voice.lang === ttsLanguage);
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                } else {
+                    console.warn("Không tìm thấy giọng đọc phù hợp với ngôn ngữ", ttsLanguage);
+                }
+                utterance.onend = () => {
+                    callback?.();
+                };
+                utterance.onerror = (event) => {
+                    console.error("Lỗi TTS:", event);
+                    callback?.();
+                };
+                speechSynthesis.speak(utterance);
+            } catch (error) {
+                console.error("Lỗi khi đọc văn bản:", error);
+                callback?.();
+            }
+        }
+
+        function stopReading() {
+            if (typeof speechSynthesis !== "undefined") {
+                speechSynthesis.cancel();
+                isSpeaking = false;
+            }
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+            isRepeating = false;
+            repeatCount = 0;
+        }
+
+        function toggleRepeat() {
+            isRepeating = !isRepeating;
+            alert(isRepeating ? "Đã bật chế độ lặp phụ đề (3 lần)" : "Đã tắt chế độ lặp phụ đề");
+        }
+
+        function rewindSubtitle() {
+            if (!youtubePlayer || subtitleData.length === 0) {
+                alert("Vui lòng tải video và phụ đề trước!");
+                return;
+            }
+            const currentTime = youtubePlayer.getCurrentTime();
+            const rewindTime = Math.max(0, currentTime - 5);
+            let newIndex = -1;
+            for (let i = subtitleData.length - 1; i >= 0; i--) {
+                if (subtitleData[i].startTime <= rewindTime) {
+                    newIndex = i;
+                    break;
+                }
+            }
+            if (newIndex >= 0) {
+                youtubePlayer.seekTo(rewindTime, true);
+                currentSubtitleIndex = newIndex - 1;
+                updateSubtitleDisplay(newIndex);
+                if (youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                    youtubePlayer.playVideo();
+                }
+            }
+        }
+
+        function saveToHistory(videoUrl, srtContent) {
+            currentVideoUrl = videoUrl;
+            const existingIndex = history.findIndex(item => item.videoUrl === videoUrl);
+            if (existingIndex !== -1) {
+                history[existingIndex].srtContent = srtContent || history[existingIndex].srtContent;
+                history[existingIndex].vocabList = vocabList.slice();
+            } else {
+                history.push({ videoUrl, srtContent, vocabList: vocabList.slice() });
+            }
+            localStorage.setItem("videoHistory", JSON.stringify(history));
+            displayHistory();
+            displayFavorites();
+        }
+
+        function displayHistory() {
+            const historyList = document.getElementById("history-list");
+            historyList.innerHTML = "";
+            history.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "history-item";
+                div.innerHTML = `
+                    ${item.videoUrl} ${item.srtContent ? "(Có phụ đề)" : ""} ${item.vocabList && item.vocabList.length > 0 ? `(${item.vocabList.length} từ vựng)` : ""}
+                    <button onclick="deleteHistoryItem(${index})">Xóa</button>
+                `;
+                div.onclick = (e) => {
+                    if (e.target.tagName !== "BUTTON") loadFromHistory(index);
+                };
+                historyList.appendChild(div);
+            });
+        }
+
+        async function loadFromHistory(index) {
+            const item = history[index];
+            if (!item) return;
+            document.getElementById("video-url").value = item.videoUrl;
+            currentVideoUrl = item.videoUrl;
+            loadVideo();
+            try {
+                await Promise.all([waitForPlayer(), waitForVoices()]);
+                if (item.srtContent) {
+                    subtitleData = parseSRT(item.srtContent);
+                    displaySubtitleList();
+                }
+                vocabList = item.vocabList ? item.vocabList.slice() : [];
+                displayVocabList();
+                if (ttsVolume === 0) {
+                    alert("Âm lượng TTS hiện bằng 0. Vui lòng điều chỉnh thanh trượt âm lượng TTS.");
+                }
+                if (youtubePlayer && youtubePlayer.playVideo) {
+                    youtubePlayer.playVideo();
+                    setTimeout(startReading, 1000);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải lịch sử:", error);
+                alert("Có lỗi xảy ra khi tải lịch sử: " + error.message);
+            }
+        }
+
+        function deleteHistoryItem(index) {
+            history.splice(index, 1);
+            localStorage.setItem("videoHistory", JSON.stringify(history));
+            displayHistory();
+            displayFavorites();
+        }
+
+        function displayVocabList() {
+            const vocabListDiv = document.getElementById("vocab-list");
+            vocabListDiv.innerHTML = "";
+            vocabList.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "vocab-item";
+                div.innerHTML = `
+                    <input type="text" value="${item.word}" onchange="editVocab(${index}, 'word', this.value)">
+                    <input type="text" value="${item.meaning}" placeholder="Nhập nghĩa..." onchange="editVocab(${index}, 'meaning', this.value)">
+                    <button onclick="deleteVocab(${index})">Xóa</button>
+                `;
+                vocabListDiv.appendChild(div);
+            });
+        }
+
+        function editVocab(index, field, value) {
+            vocabList[index][field] = value;
+            saveVocabToHistory();
+        }
+
+        function deleteVocab(index) {
+            vocabList.splice(index, 1);
+            saveVocabToHistory();
+            displayVocabList();
+        }
+
+        function saveVocabToHistory() {
+            const existingIndex = history.findIndex(item => item.videoUrl === currentVideoUrl);
+            if (existingIndex !== -1) {
+                history[existingIndex].vocabList = vocabList.slice();
+                localStorage.setItem("videoHistory", JSON.stringify(history));
+                displayHistory();
+                displayFavorites();
+            }
+        }
+
+        function validateState(state) {
+            const errors = [];
+            if (!state.videoUrl || typeof state.videoUrl !== "string") {
+                errors.push("Invalid or missing videoUrl");
+            }
+            if (!Array.isArray(state.subtitleData)) {
+                errors.push("Invalid or missing subtitleData");
+            } else {
+                state.subtitleData.forEach((sub, i) => {
+                    if (!sub || typeof sub.startTime !== "number" || !sub.koreanText || !sub.vietnameseText) {
+                        errors.push(`Invalid subtitleData at index ${i}`);
+                    }
+                });
+            }
+            if (typeof state.currentSubtitleIndex !== "number" || state.currentSubtitleIndex < -1) {
+                errors.push("Invalid currentSubtitleIndex");
+            }
+            if (typeof state.ttsSpeed !== "number" || state.ttsSpeed < 0.5 || state.ttsSpeed > 2.5) {
+                errors.push("Invalid ttsSpeed");
+            }
+            if (!["vi-VN", "ko-KR"].includes(state.ttsLanguage)) {
+                errors.push("Invalid ttsLanguage");
+            }
+            if (!Array.isArray(state.history)) {
+                errors.push("Invalid history");
+            }
+            if (typeof state.currentTime !== "number" || state.currentTime < 0) {
+                errors.push("Invalid currentTime");
+            }
+            if (!Array.isArray(state.vocabList)) {
+                errors.push("Invalid vocabList");
+            }
+            if (typeof state.videoVolume !== "number" || state.videoVolume < 0 || state.videoVolume > 100) {
+                errors.push("Invalid videoVolume");
+            }
+            if (typeof state.ttsVolume !== "number" || state.ttsVolume < 0 || state.ttsVolume > 1) {
+                errors.push("Invalid ttsVolume");
+            }
+            if (!state.favoriteSubtitles || typeof state.favoriteSubtitles !== "object") {
+                errors.push("Invalid favoriteSubtitles");
+            }
+            return errors;
+        }
+
+        function saveState() {
+            const videoId = extractVideoId(currentVideoUrl);
+            const allFavs = JSON.parse(localStorage.getItem("favoriteSubtitles") || "{}");
+            const state = {
+                videoUrl: currentVideoUrl,
+                subtitleData: subtitleData,
+                currentSubtitleIndex: currentSubtitleIndex,
+                ttsSpeed: ttsSpeed,
+                ttsLanguage: ttsLanguage,
+                history: history,
+                currentTime: youtubePlayer ? youtubePlayer.getCurrentTime() : 0,
+                vocabList: vocabList,
+                videoVolume: parseInt(document.getElementById("video-volume").value),
+                ttsVolume: ttsVolume,
+                favoriteSubtitles: allFavs
+            };
+            const jsonString = JSON.stringify(state, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url
+
+ = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `youtube_player_state_${new Date().toISOString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("Đã lưu trạng thái thành công!");
+        }
+
+        async function loadState() {
+            const fileInput = document.getElementById("state-file").files[0];
+            if (!fileInput) {
+                alert("Vui lòng chọn file JSON!");
+                return;
+            }
+            try {
+                const reader = new FileReader();
+                const state = await new Promise((resolve, reject) => {
+                    reader.onload = (event) => {
+                        try {
+                            resolve(JSON.parse(event.target.result));
+                        } catch (e) {
+                            reject(new Error("Lỗi phân tích JSON: " + e.message));
+                        }
+                    };
+                    reader.onerror = () => reject(new Error("Lỗi đọc file JSON"));
+                    reader.readAsText(fileInput);
+                });
+                const validationErrors = validateState(state);
+                if (validationErrors.length > 0) {
+                    console.error("Validation errors:", validationErrors);
+                    alert("Lỗi khi tải trạng thái:\n" + validationErrors.join("\n"));
+                    return;
+                }
+                document.getElementById("video-url").value = state.videoUrl;
+                currentVideoUrl = state.videoUrl;
+                loadVideo();
+                try {
+                    await Promise.all([waitForPlayer(), waitForVoices()]);
+                } catch (e) {
+                    console.error("Initialization error:", e);
+                    alert("Lỗi khi khởi tạo player hoặc TTS: " + e.message);
+                    return;
+                }
+                subtitleData = state.subtitleData;
+                displaySubtitleList();
+                currentSubtitleIndex = state.currentSubtitleIndex;
+                youtubePlayer.seekTo(state.currentTime, true);
+                ttsSpeed = state.ttsSpeed;
+                document.getElementById("tts-speed").value = ttsSpeed;
+                document.getElementById("speed-value").textContent = ttsSpeed;
+                localStorage.setItem("ttsSpeed", ttsSpeed);
+                ttsLanguage = state.ttsLanguage;
+                document.getElementById("tts-language").value = ttsLanguage;
+                localStorage.setItem("ttsLanguage", ttsLanguage);
+                ttsVolume = state.ttsVolume;
+                document.getElementById("tts-volume").value = ttsVolume;
+                document.getElementById("tts-volume-value").textContent = ttsVolume.toFixed(1);
+                localStorage.setItem("ttsVolume", ttsVolume);
+                document.getElementById("video-volume").value = state.videoVolume;
+                updateVideoVolume(state.videoVolume);
+                const existingHistory = JSON.parse(localStorage.getItem("videoHistory")) || [];
+                const mergedHistory = [...existingHistory];
+                state.history.forEach(newItem => {
+                    const existingIndex = mergedHistory.findIndex(item => item.videoUrl === newItem.videoUrl);
+                    if (existingIndex === -1) {
+                        mergedHistory.push(newItem);
+                    } else {
+                        if (newItem.srtContent || (newItem.vocabList && newItem.vocabList.length > (mergedHistory[existingIndex].vocabList || []).length)) {
+                            mergedHistory[existingIndex] = newItem;
+                        }
+                    }
+                });
+                history = mergedHistory;
+                localStorage.setItem("videoHistory", JSON.stringify(history));
+                displayHistory();
+                vocabList = state.vocabList.slice();
+                displayVocabList();
+                localStorage.setItem("favoriteSubtitles", JSON.stringify(state.favoriteSubtitles));
+                displayFavorites();
+                if (subtitleData.length > 0 && currentSubtitleIndex >= -1) {
+                    const currentTime = state.currentTime;
+                    let newIndex = -1;
+                    for (let i = 0; i < subtitleData.length; i++) {
+                        if (subtitleData[i].startTime <= currentTime) {
+                            newIndex = i;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (newIndex >= 0) {
+                        currentSubtitleIndex = newIndex;
+                        updateSubtitleDisplay(newIndex);
+                    }
+                }
+                alert("Đã khôi phục trạng thái thành công!");
+            } catch (e) {
+                console.error("Load state error:", e);
+                alert("Lỗi khi tải trạng thái: " + e.message);
+            }
+        }
+
+        function addFavorite(index) {
+            const videoId = extractVideoId(currentVideoUrl);
+            const allFavs = JSON.parse(localStorage.getItem("favoriteSubtitles") || "{}");
+            const favs = allFavs[videoId] || [];
+            const current = subtitleData[index];
+            if (!favs.find(f => f.startTime === current.startTime)) {
+                favs.push(current);
+                allFavs[videoId] = favs;
+                localStorage.setItem("favoriteSubtitles", JSON.stringify(allFavs));
+                displayFavorites();
+            }
+        }
+
+        function displayFavorites() {
+            const favContainer = document.getElementById("favorite-subtitles");
+            const videoId = extractVideoId(currentVideoUrl);
+            const allFavs = JSON.parse(localStorage.getItem("favoriteSubtitles") || "{}");
+            const favs = allFavs[videoId] || [];
+            favContainer.innerHTML = "";
+            favs.forEach((sub, index) => {
+                const div = document.createElement("div");
+                div.className = "subtitle-item";
+                div.innerHTML = `
+                    ${formatTime(sub.startTime)}: ${sub.koreanText} <span class="vietnamese">${sub.vietnameseText}</span>
+                    <button onclick="removeFavorite(${index}); event.stopPropagation();">Xóa</button>`;
+                div.onclick = () => {
+                    youtubePlayer.seekTo(sub.startTime, true);
+                    youtubePlayer.playVideo();
+                    readText(ttsLanguage === "vi-VN" ? sub.vietnameseText : sub.koreanText, () => {});
+                };
+                favContainer.appendChild(div);
+            });
+        }
+
+        function removeFavorite(index) {
+            const videoId = extractVideoId(currentVideoUrl);
+            const allFavs = JSON.parse(localStorage.getItem("favoriteSubtitles") || "{}");
+            if (allFavs[videoId]) {
+                allFavs[videoId].splice(index, 1);
+                localStorage.setItem("favoriteSubtitles", JSON.stringify(allFavs));
+                displayFavorites();
+            }
+        }
+
+        function clearAllFavorites() {
+            const videoId = extractVideoId(currentVideoUrl);
+            const allFavs = JSON.parse(localStorage.getItem("favoriteSubtitles") || "{}");
+            delete allFavs[videoId];
+            localStorage.setItem("favoriteSubtitles", JSON.stringify(allFavs));
+            displayFavorites();
+        }
+
+        function testTTS() {
+            const testText = ttsLanguage === "vi-VN" 
+                ? "Xin chào, đây là kiểm tra giọng đọc tiếng Việt" 
+                : "안녕하세요, 한국어 음성 테스트입니다";
+            if (ttsVolume === 0) {
+                alert("Âm lượng TTS đang bằng 0. Vui lòng điều chỉnh thanh trượt âm lượng TTS trước khi thử.");
+                return;
+            }
+            readText(testText, () => {
+                console.log("Kiểm tra TTS hoàn thành");
+            });
+        }
+
+        window.onload = () => {
+            const savedSpeed = localStorage.getItem("ttsSpeed");
+            const savedVolume = localStorage.getItem("ttsVolume");
+            const savedLanguage = localStorage.getItem("ttsLanguage");
+            if (savedSpeed) {
+                ttsSpeed = parseFloat(savedSpeed);
+                document.getElementById("tts-speed").value = ttsSpeed;
+                document.getElementById("speed-value").textContent = ttsSpeed;
+            }
+            if (savedVolume) {
+                ttsVolume = parseFloat(savedVolume);
+                document.getElementById("tts-volume").value = ttsVolume;
+                document.getElementById("tts-volume-value").textContent = ttsVolume.toFixed(1);
+            }
+            if (savedLanguage) {
+                ttsLanguage = savedLanguage;
+                document.getElementById("tts-language").value = ttsLanguage;
+            }
+            displayHistory();
+            displayFavorites();
+            displayVocabList();
+        };
+    </script>
+</body>
+</html>
